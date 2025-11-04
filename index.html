@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iKOU Customer Journey Map</title>
+  <meta name="description" content="Interactive lifecycle and automation map for iKOU CRM (Klaviyo)." />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a34;
+      --ink: #e7ecff;
+      --muted: #aab3d9;
+      --accent: #7dc9ff;
+      --accent-2: #9df2c8;
+      --warning: #ffd399;
+      --owned: #c3f0ff;
+      --radius: 18px;
+      --shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #1c2752, var(--bg)), var(--bg);
+      color: var(--ink);
+      letter-spacing: .2px;
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(10,15,30,.8), rgba(10,15,30,.35));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .titlebar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .titlebar h1 { font-size: clamp(20px, 2.2vw, 32px); margin: 0; letter-spacing:.4px; }
+    .titlebar .tag { padding:6px 10px; border-radius:999px; background: rgba(125,201,255,.15); color:#c9e9ff; border:1px solid rgba(125,201,255,.35); font-size:12px; }
+    .controls { margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { appearance:none; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color:var(--ink); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; box-shadow:var(--shadow); transition:.2s; }
+    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.10); }
+    .btn.primary { border-color: rgba(157,242,200,.5); background: linear-gradient(180deg, rgba(157,242,200,.25), rgba(157,242,200,.15)); color:#eafff6; }
+
+    .subtle { color: var(--muted); }
+
+    /* Journey grid */
+    .grid { display:grid; gap:16px; grid-template-columns: repeat(6, minmax(180px, 1fr)); align-items:stretch; margin-top:22px; overflow-x:auto; padding-bottom:10px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(220px, 1fr)); } }
+    @media (max-width: 720px)  { .grid { grid-template-columns: repeat(1, minmax(260px, 1fr)); } }
+
+    .stage { position:relative; border-radius: var(--radius); padding:18px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.08); box-shadow: var(--shadow); display:flex; flex-direction:column; min-height: 260px; }
+    .stage h2 { margin:0 0 8px; font-size: 18px; letter-spacing:.4px; }
+    .badge { display:inline-flex; align-items:center; gap:8px; font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); color:#c9d3ff; background: rgba(255,255,255,.04); }
+    .badge.owned { color:#07202b; background: var(--owned); border-color: rgba(195,240,255,.6); }
+    .badge.ext { color:#21363f; background: #ffe9bf; border-color: rgba(255,211,153,.6); }
+
+    .list { margin:12px 0 0; padding:0; list-style:none; }
+    .list li { display:block; padding-left:22px; position:relative; margin:8px 0; color: var(--muted); line-height:1.35; }
+    .list li::before { content:"•"; position:absolute; left:8px; color: var(--accent); }
+
+    .actions { margin-top:auto; display:flex; gap:8px; flex-wrap:wrap; }
+    .pill { font-size:12px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color:var(--ink); text-decoration:none; font-weight:600; }
+    .pill:hover { background: rgba(255,255,255,.1); }
+    .arrow { position:absolute; right:-10px; top:50%; translate: 0 -50%; width:20px; height:20px; rotate: -90deg; opacity:.6; }
+
+    .legend { margin-top: 24px; display:flex; gap:14px; flex-wrap:wrap; }
+    .legend .key { display:flex; align-items:center; gap:8px; color: var(--muted); }
+    .legend .swatch { width:12px; height:12px; border-radius:6px; display:inline-block; }
+    .swatch-owned { background: var(--owned); }
+    .swatch-ext { background: #ffe9bf; }
+
+    footer { margin: 26px 0 60px; color: var(--muted); font-size: 13px; }
+    code.inline { padding:2px 6px; border-radius:6px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap titlebar">
+      <h1>iKOU Customer Journey Map</h1>
+      <span class="tag">CRM · Klaviyo · Lifecycle</span>
+      <div class="controls">
+        <button class="btn primary" onclick="scrollToGrid()">Explore Stages</button>
+        <button class="btn" onclick="toggleNotes()">Toggle Helper Notes</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="subtle" id="notes">This interactive map shows the six lifecycle stages. Stages with an <strong>Owned</strong> badge are managed by CRM (you). Click a stage to open its detailed page (flows, segments, KPIs, assets). Keep this file in the repo root as <code class="inline">index.html</code>. Place detailed pages in <code class="inline">/stages/</code>.</p>
+
+    <section id="grid" class="grid" aria-label="Lifecycle stages">
+      <!-- Stages will be rendered here by script -->
+    </section>
+
+    <div class="legend">
+      <div class="key"><span class="swatch swatch-owned"></span> Owned by CRM</div>
+      <div class="key"><span class="swatch swatch-ext"></span> Owned by Ads/External</div>
+      <div class="key">Last updated: <span id="updated"></span></div>
+    </div>
+
+    <footer>
+      <p>Tip: In each stage page, include: Objective · Flows · Segments · Triggers · Suppression · Sample Emails · KPIs · Change Log. Link back here with <code class="inline">&lt;a href="../index.html"&gt;Back to Map&lt;/a&gt;</code>.</p>
+    </footer>
+  </main>
+
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="chev" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l6 6H6z"/></symbol>
+  </svg>
+
+  <script>
+    const stages = [
+      {
+        id: 'awareness',
+        title: 'Awareness',
+        owned: false,
+        bullets: [
+          'Meta & Google Ads (video/carousel)',
+          'UGC / PR / SEO / Pinterest',
+          'Drive qualified traffic to sign-up'
+        ],
+        link: 'stages/awareness.html'
+      },
+      {
+        id: 'consideration',
+        title: 'Consideration',
+        owned: true,
+        bullets: [
+          'Welcome Series (01–03)',
+          'Lead Nurture (non-purchasers)',
+          'Abandoned Browse / Cart'
+        ],
+        link: 'stages/consideration.html'
+      },
+      {
+        id: 'conversion',
+        title: 'Conversion',
+        owned: true,
+        bullets: [
+          'PDP optimisation & cross-sell',
+          'Cart recovery (2–3 emails)',
+          'Onsite offers & thresholds'
+        ],
+        link: 'stages/conversion.html'
+      },
+      {
+        id: 'experience',
+        title: 'Experience',
+        owned: true,
+        bullets: [
+          'Post‑Purchase (TY → Tips → Refill)',
+          'Cross‑sell by collection',
+          'Product Lifecycle (replenish)'
+        ],
+        link: 'stages/experience.html'
+      },
+      {
+        id: 'loyalty',
+        title: 'Loyalty',
+        owned: true,
+        bullets: [
+          'Replenishment reminders',
+          'VIP / seasonal community stories',
+          'Back‑in‑Stock · Price Drops'
+        ],
+        link: 'stages/loyalty.html'
+      },
+      {
+        id: 'reactivation',
+        title: 'Reactivation',
+        owned: true,
+        bullets: [
+          'Winback (90–120d)',
+          'Re‑engagement sequences',
+          'Sunset hygiene (deliverability)'
+        ],
+        link: 'stages/reactivation.html'
+      }
+    ];
+
+    function stageEl(s, i) {
+      const el = document.createElement('article');
+      el.className = 'stage';
+      el.innerHTML = `
+        <h2>${s.title}</h2>
+        <span class="badge ${s.owned ? 'owned' : 'ext'}">${s.owned ? 'Owned' : 'External/Ads'}</span>
+        <ul class="list">${s.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+        <div class="actions">
+          <a class="pill" href="${s.link}">Open stage</a>
+          <a class="pill" href="#" onclick="copyPath('${s.link}'); return false;">Copy path</a>
+        </div>
+        <svg class="arrow" aria-hidden="true"><use href="#chev"/></svg>
+      `;
+      return el;
+    }
+
+    function render() {
+      const grid = document.getElementById('grid');
+      stages.forEach((s, i) => grid.appendChild(stageEl(s, i)));
+      document.getElementById('updated').textContent = new Date().toISOString().split('T')[0];
+    }
+
+    function copyPath(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Copied: ${text}`);
+      });
+    }
+
+    function scrollToGrid(){
+      document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleNotes(){
+      const el = document.getElementById('notes');
+      el.style.display = (el.style.display === 'none') ? '' : 'none';
+    }
+
+    render();
+  </script>
+</body>
+</html>
